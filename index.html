@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simple Calculator</title>
-    <link rel="icon" href="cal.png" type="image/x-icon" />
+    <link rel="icon" href="/img/cal.png" type="image/x-icon" />
     <style>
       body {
         background: white;
@@ -90,7 +90,9 @@
       <div class="calcshow">
         <table>
           <tr>
-            <th colspan="3"><input class="tb" readonly /></th>
+            <th colspan="3">
+              <input class="tb" id="tb" readonly placeholder="0" />
+            </th>
           </tr>
         </table>
       </div>
@@ -98,12 +100,8 @@
         <button onclick="toDisplay('7')">7</button>
         <button onclick="toDisplay('8')">8</button>
         <button onclick="toDisplay('9')">9</button>
-        <button onclick="toggleSign()" class="operator-btn" id="one">
-          +/-
-        </button>
-        <button onclick="toDisplay('DEL')" class="operator-btn" id="one">
-          DEL
-        </button>
+        <button onclick="toggleSign()" class="operator-btn">+/-</button>
+        <button onclick="del()" class="operator-btn" id="one">DEL</button>
 
         <button type="button" onclick="toDisplay('4')">4</button>
         <button type="button" onclick="toDisplay('5')">5</button>
@@ -139,71 +137,86 @@
     </div>
 
     <script>
-      let displayValue = "";
-      let isResultDisplayed = false;
-      const display = document.querySelector(".tb");
+      let check = false;
+      const display = document.getElementById("tb");
 
       function toDisplay(value) {
-        if (isResultDisplayed) {
-          if ("0123456789".includes(value)) {
-            displayValue = value;
+        if (check) {
+          if (["+", "-", "×", "÷"].includes(value)) {
+            display.value += value;
           } else {
-            displayValue += value;
+            display.value = value;
           }
-          isResultDisplayed = false;
+          check = false;
         } else {
-          if (value === "DEL") {
-            displayValue = displayValue.slice(0, -1);
-          } else if (value === "+/-") {
-            toggleSign();
-          } else {
-            displayValue += value;
-          }
+          display.value += value;
         }
-        display.value = displayValue;
       }
 
       function clearDisplay() {
-        displayValue = "";
-        display.value = displayValue;
-        isResultDisplayed = false;
+        display.value = "";
+        check = false;
+      }
+
+      function del() {
+        display.value = display.value.slice(0, -1);
+        check = false;
       }
 
       function calculator() {
+        const expression = display.value.replace(/×/g, "*").replace(/÷/g, "/");
+        let result;
+
         try {
-          const expression = displayValue.replace(/×/g, "*").replace(/÷/g, "/");
-          displayValue = eval(expression).toString();
+          result = eval(expression).toString();
+
+          if (!isNaN(result) && isFinite(result)) {
+            result = parseFloat(parseFloat(result).toPrecision(12));
+          } else {
+            result = "Error";
+          }
         } catch (e) {
-          displayValue = "Error";
+          result = "Error";
         }
-        display.value = displayValue;
-        isResultDisplayed = true;
+
+        display.value = result;
+        check = true;
       }
 
       function toggleSign() {
-        const lastOperatorIndex = Math.max(
-          displayValue.lastIndexOf("+"),
-          displayValue.lastIndexOf("-"),
-          displayValue.lastIndexOf("*"),
-          displayValue.lastIndexOf("÷")
-        );
-        if (lastOperatorIndex === -1) {
-          displayValue = displayValue.startsWith("-")
-            ? displayValue.slice(1)
-            : "-" + displayValue;
-        } else {
-          const beforeOperator = displayValue.slice(0, lastOperatorIndex + 1);
-          let numberPart = displayValue.slice(lastOperatorIndex + 1);
-          if (numberPart.startsWith("(-")) {
-            numberPart = numberPart.slice(2, -1);
-          } else if (numberPart.startsWith("-")) {
-            numberPart = numberPart.slice(1);
-          } else {
-            numberPart = `(-${numberPart})`;
+        let value = display.value.trim();
+
+        if (value !== "") {
+          // Tìm số cuối cùng trong biểu thức
+          let lastNumberMatch = value.match(/-?\d+(\.\d+)?$/);
+
+          if (lastNumberMatch) {
+            let lastNumber = lastNumberMatch[0];
+            let toggledNumber;
+
+            // Kiểm tra nếu chỉ có một phần tử (một số duy nhất)
+            if (value === lastNumber) {
+              // Chuyển đổi dấu của số duy nhất
+              if (lastNumber.startsWith("-")) {
+                toggledNumber = lastNumber.slice(1);
+              } else {
+                toggledNumber = `-${lastNumber}`;
+              }
+            } else {
+              // Chuyển đổi dấu của số cuối cùng và đặt trong ngoặc đơn
+              if (lastNumber.startsWith("-")) {
+                toggledNumber = "-" + `(${lastNumber})`;
+              } else {
+                toggledNumber = `(-${lastNumber})`;
+              }
+            }
+            // Cập nhật biểu thức với số cuối cùng đã được chuyển đổi dấu
+            value = value.slice(0, -lastNumber.length) + toggledNumber;
+
+            // Cập nhật phần tử hiển thị với biểu thức mới
+            display.value = value;
           }
-          displayValue = beforeOperator + numberPart;
         }
-        display.value = displayValue;
       }
     </script>
   </body>
