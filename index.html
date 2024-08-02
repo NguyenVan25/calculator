@@ -135,18 +135,16 @@
         <button type="button" onclick="calculator()" class="equal">=</button>
       </div>
     </div>
-
     <script>
       let check = false;
       const display = document.getElementById("tb");
-      const max = 10;
 
       function checkfont() {
-        const dodai = display.value.length;
-        if (dodai > 10) {
-          display.style.fontSize = "2rem"; // Sửa font-size
+        const length = display.value.length;
+        if (length > 10) {
+          display.style.fontSize = "2rem";
         } else {
-          display.style.fontSize = "3rem"; // Sửa font-size
+          display.style.fontSize = "3rem";
         }
       }
 
@@ -159,6 +157,8 @@
           // Nếu có, cho phép thêm toán tử vào và đặt lại check flag
           display.value += value;
           check = false;
+        } else if (display.value === "0") {
+          display.value = value;
         } else {
           // Tách biểu thức thành các phần bằng cách sử dụng toán tử
           const parts = display.value.split(/([+\-×÷])/);
@@ -177,29 +177,6 @@
         checkfont();
       }
 
-      function calculator() {
-        const expression = display.value.replace(/×/g, "*").replace(/÷/g, "/");
-        let result;
-        console.log(expression);
-
-        try {
-          result = new Function("return " + expression)(); // Thay eval bằng Function constructor
-          result = result.toString();
-
-          if (!isNaN(result) && isFinite(result)) {
-            result = parseFloat(parseFloat(result).toPrecision(10));
-          } else {
-            result = "Error";
-          }
-        } catch (e) {
-          result = "Error";
-        }
-
-        display.value = result;
-        check = true;
-        checkfont();
-      }
-
       function clearDisplay() {
         display.value = "";
         check = false;
@@ -212,24 +189,75 @@
         checkfont();
       }
 
+      function calculator() {
+        const expression = display.value.replace(/×/g, "*").replace(/÷/g, "/");
+        let result;
+
+        try {
+          // Kiểm tra xem biểu thức có chứa dấu thập phân hoặc phép tính nhân chia
+          if (
+            expression.includes(".") ||
+            expression.includes("*") ||
+            expression.includes("/")
+          ) {
+            // Nếu có, sử dụng phép tính số thực thông thường với eval
+            result = eval(expression).toString();
+          } else {
+            // Nếu không, xử lý biểu thức dưới dạng số nguyên lớn bằng BigInt
+            // Thay đổi cách xử lý biểu thức để tránh lỗi
+            const bigintExpression = expression.replace(/(\d+)/g, "BigInt($1)");
+            result = eval(bigintExpression).toString();
+          }
+
+          console.log("Kết quả: " + result);
+
+          if (!isNaN(result) && isFinite(result)) {
+            result = result.toString();
+          } else {
+            result = "Error";
+          }
+        } catch (e) {
+          result = "Error";
+        }
+
+        display.value = result;
+        check = true;
+        checkfont();
+      }
+
       function toggleSign() {
-        let value = display.value.trim(); // Xóa khoảng trống
+        let value = display.value.trim(); // xoá khoảng trống
 
         if (value !== "") {
+          // Tìm số cuối cùng trong biểu thức
           let lastNumberMatch = value.match(/-?\d+(\.\d+)?$/);
 
           if (lastNumberMatch) {
             let lastNumber = lastNumberMatch[0];
             let toggledNumber;
 
-            if (lastNumber.startsWith("-")) {
-              toggledNumber = lastNumber.slice(1);
+            // Kiểm tra nếu chỉ có một phần tử (một số duy nhất)
+            if (value === lastNumber) {
+              // Chuyển đổi dấu của số duy nhất
+              if (lastNumber.startsWith("-")) {
+                toggledNumber = lastNumber.slice(1);
+              } else {
+                toggledNumber = "-" + lastNumber;
+              }
             } else {
-              toggledNumber = "-" + lastNumber;
-            }
+              // Chuyển đổi dấu của số cuối cùng và đặt trong ngoặc đơn
+              if (lastNumber.startsWith("-")) {
+                toggledNumber = lastNumber.slice(1); // Xóa dấu trừ
+              } else {
+                toggledNumber = "-" + lastNumber; // Thêm dấu trừ
+              }
 
-            value = value.slice(0, -lastNumber.length) + toggledNumber;
-            display.value = value;
+              // Cập nhật biểu thức với số cuối cùng đã được chuyển đổi dấu
+              value = value.slice(0, -lastNumber.length) + toggledNumber;
+
+              // Cập nhật phần tử hiển thị với biểu thức mới
+              display.value = value;
+            }
           }
         }
         checkfont();
