@@ -139,39 +139,55 @@
     <script>
       let check = false;
       const display = document.getElementById("tb");
+      const max = 10;
 
-      function toDisplay(value) {
-        if (check) {
-          if (["+", "-", "×", "÷"].includes(value)) {
-            display.value += value;
-          } else {
-            display.value = value;
-          }
-          check = false;
+      function checkfont() {
+        const dodai = display.value.length;
+        if (dodai > 10) {
+          display.style.fontSize = "2rem"; // Sửa font-size
         } else {
-          display.value += value;
+          display.style.fontSize = "3rem"; // Sửa font-size
         }
       }
 
-      function clearDisplay() {
-        display.value = "";
-        check = false;
-      }
+      function toDisplay(value) {
+        const max = 10;
+        const operators = ["+", "-", "×", "÷"];
 
-      function del() {
-        display.value = display.value.slice(0, -1);
-        check = false;
+        // Kiểm tra nếu giá trị là toán tử
+        if (operators.includes(value)) {
+          // Nếu có, cho phép thêm toán tử vào và đặt lại check flag
+          display.value += value;
+          check = false;
+        } else {
+          // Tách biểu thức thành các phần bằng cách sử dụng toán tử
+          const parts = display.value.split(/([+\-×÷])/);
+          // Lấy phần cuối cùng trong mảng (số cuối cùng hoặc đoạn số cuối cùng)
+          const lastPart = parts[parts.length - 1];
+
+          // Kiểm tra số lượng chữ số trong phần cuối cùng
+          if (lastPart.replace(/[+\-×÷]/g, "").length < max) {
+            display.value += value;
+          } else if (check) {
+            // Nếu check flag được đặt và giá trị không phải toán tử, thay thế phần hiện tại
+            display.value = value;
+            check = false;
+          }
+        }
+        checkfont();
       }
 
       function calculator() {
         const expression = display.value.replace(/×/g, "*").replace(/÷/g, "/");
         let result;
+        console.log(expression);
 
         try {
-          result = eval(expression).toString();
+          result = new Function("return " + expression)(); // Thay eval bằng Function constructor
+          result = result.toString();
 
           if (!isNaN(result) && isFinite(result)) {
-            result = parseFloat(parseFloat(result).toPrecision(12));
+            result = parseFloat(parseFloat(result).toPrecision(10));
           } else {
             result = "Error";
           }
@@ -181,42 +197,42 @@
 
         display.value = result;
         check = true;
+        checkfont();
+      }
+
+      function clearDisplay() {
+        display.value = "";
+        check = false;
+        checkfont();
+      }
+
+      function del() {
+        display.value = display.value.slice(0, -1);
+        check = false;
+        checkfont();
       }
 
       function toggleSign() {
-        let value = display.value.trim();
+        let value = display.value.trim(); // Xóa khoảng trống
 
         if (value !== "") {
-          // Tìm số cuối cùng trong biểu thức
           let lastNumberMatch = value.match(/-?\d+(\.\d+)?$/);
 
           if (lastNumberMatch) {
             let lastNumber = lastNumberMatch[0];
             let toggledNumber;
 
-            // Kiểm tra nếu chỉ có một phần tử (một số duy nhất)
-            if (value === lastNumber) {
-              // Chuyển đổi dấu của số duy nhất
-              if (lastNumber.startsWith("-")) {
-                toggledNumber = lastNumber.slice(1);
-              } else {
-                toggledNumber = `-${lastNumber}`;
-              }
+            if (lastNumber.startsWith("-")) {
+              toggledNumber = lastNumber.slice(1);
             } else {
-              // Chuyển đổi dấu của số cuối cùng và đặt trong ngoặc đơn
-              if (lastNumber.startsWith("-")) {
-                toggledNumber = "-" + `(${lastNumber})`;
-              } else {
-                toggledNumber = `(-${lastNumber})`;
-              }
+              toggledNumber = "-" + lastNumber;
             }
-            // Cập nhật biểu thức với số cuối cùng đã được chuyển đổi dấu
-            value = value.slice(0, -lastNumber.length) + toggledNumber;
 
-            // Cập nhật phần tử hiển thị với biểu thức mới
+            value = value.slice(0, -lastNumber.length) + toggledNumber;
             display.value = value;
           }
         }
+        checkfont();
       }
     </script>
   </body>
