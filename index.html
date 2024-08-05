@@ -45,7 +45,7 @@
         border-color: rgb(176, 175, 175);
         background-color: rgb(215, 217, 218);
         color: rgb(64, 118, 184);
-        font-size: 2rem;
+        font-size: 32px;
         font-weight: bold;
         cursor: pointer;
       }
@@ -67,12 +67,12 @@
         border-radius: 10px;
         position: relative;
         text-align: right;
-        font-size: 3rem;
+        font-size: 50px;
         font-weight: bolder;
         left: 5px;
       }
       #one {
-        font-size: 1.3rem;
+        font-size: 22px;
       }
       .equal {
         background-color: rgb(138, 151, 151);
@@ -136,49 +136,45 @@
       </div>
     </div>
     <script>
+      let result = "";
+      let display = document.getElementById("tb");
       let check = false;
-      const display = document.getElementById("tb");
+      const max = 10;
+      let toantu = ["+", "-", "×", "÷"];
 
       function checkfont() {
-        const length = display.value.length;
+        let length = display.value.length;
         if (length > 10) {
-          display.style.fontSize = "2rem";
+          display.style.fontSize = "35px";
         } else {
-          display.style.fontSize = "3rem";
+          display.style.fontSize = "50px";
         }
       }
 
       function toDisplay(value) {
-        const max = 10;
-        const operators = ["+", "-", "×", "÷"];
-
-        // Kiểm tra nếu giá trị là toán tử
-        if (operators.includes(value)) {
-          // Nếu có, cho phép thêm toán tử vào và đặt lại check flag
-          display.value += value;
-          check = false;
-        } else if (display.value === "0") {
-          display.value = value;
-        } else {
-          // Tách biểu thức thành các phần bằng cách sử dụng toán tử
-          const parts = display.value.split(/([+\-×÷])/);
-          // Lấy phần cuối cùng trong mảng (số cuối cùng hoặc đoạn số cuối cùng)
-          const lastPart = parts[parts.length - 1];
-
-          // Kiểm tra số lượng chữ số trong phần cuối cùng
-          if (lastPart.replace(/[+\-×÷]/g, "").length < max) {
+        if (check) {
+          if (toantu.includes(value)) {
             display.value += value;
-          } else if (check) {
-            // Nếu check flag được đặt và giá trị không phải toán tử, thay thế phần hiện tại
+            check = false;
+          } else {
             display.value = value;
             check = false;
           }
+        } else {
+          if (toantu.includes(value)) {
+            display.value += value;
+            check = false;
+          } else {
+            const tach = display.value.split(/([+\-×÷])/);
+            const sautach = tach[tach.length - 1];
+            if (sautach.replace(/[+\-×÷]/g, "").length < max) {
+              display.value += value;
+            } else if (check) {
+              display.value = value;
+              check = false;
+            }
+          }
         }
-        checkfont();
-      }
-
-      function clearDisplay() {
-        display.value = "";
         check = false;
         checkfont();
       }
@@ -186,80 +182,133 @@
       function del() {
         display.value = display.value.slice(0, -1);
         check = false;
-        checkfont();
       }
 
-      function calculator() {
-        const expression = display.value.replace(/×/g, "*").replace(/÷/g, "/");
-        let result;
-
-        try {
-          // Kiểm tra xem biểu thức có chứa dấu thập phân hoặc phép tính nhân chia
-          if (
-            expression.includes(".") ||
-            expression.includes("*") ||
-            expression.includes("/")
-          ) {
-            // Nếu có, sử dụng phép tính số thực thông thường với eval
-            result = eval(expression).toString();
-          } else {
-            // Nếu không, xử lý biểu thức dưới dạng số nguyên lớn bằng BigInt
-            // Thay đổi cách xử lý biểu thức để tránh lỗi
-            const bigintExpression = expression.replace(/(\d+)/g, "BigInt($1)");
-            result = eval(bigintExpression).toString();
-          }
-
-          console.log("Kết quả: " + result);
-
-          if (!isNaN(result) && isFinite(result)) {
-            result = result.toString();
-          } else {
-            result = "Error";
-          }
-        } catch (e) {
-          result = "Error";
-        }
-
-        display.value = result;
-        check = true;
-        checkfont();
+      function clearDisplay() {
+        display.value = "";
+        check = false;
       }
 
       function toggleSign() {
-        let value = display.value.trim(); // xoá khoảng trống
+        let value = display.value.trim();
 
         if (value !== "") {
-          // Tìm số cuối cùng trong biểu thức
           let lastNumberMatch = value.match(/-?\d+(\.\d+)?$/);
 
           if (lastNumberMatch) {
             let lastNumber = lastNumberMatch[0];
             let toggledNumber;
 
-            // Kiểm tra nếu chỉ có một phần tử (một số duy nhất)
             if (value === lastNumber) {
-              // Chuyển đổi dấu của số duy nhất
               if (lastNumber.startsWith("-")) {
                 toggledNumber = lastNumber.slice(1);
               } else {
-                toggledNumber = "-" + lastNumber;
+                toggledNumber = `-${lastNumber}`;
               }
             } else {
-              // Chuyển đổi dấu của số cuối cùng và đặt trong ngoặc đơn
-              if (lastNumber.startsWith("-")) {
-                toggledNumber = lastNumber.slice(1); // Xóa dấu trừ
-              } else {
-                toggledNumber = "-" + lastNumber; // Thêm dấu trừ
-              }
-
-              // Cập nhật biểu thức với số cuối cùng đã được chuyển đổi dấu
-              value = value.slice(0, -lastNumber.length) + toggledNumber;
-
-              // Cập nhật phần tử hiển thị với biểu thức mới
-              display.value = value;
+              return;
             }
+
+            value = value.slice(0, -lastNumber.length) + toggledNumber;
+
+            display.value = value;
           }
         }
+        checkfont();
+      }
+
+      function stp(numbers) {
+        const maxDec = Math.max(
+          ...numbers.map((num) =>
+            num.includes(".") ? num.split(".")[1].length : 0
+          )
+        );
+        return Math.pow(10, maxDec);
+      }
+
+      function tinhtoan() {
+        const tach = display.value
+          .split(/([+\-×÷])/)
+          .filter((part) => part.trim() !== "");
+        let nums = [];
+        let oper = [];
+        let i = 0;
+
+        while (i < tach.length) {
+          if (isOperator(tach[i])) {
+            oper.push(tach[i]);
+          } else {
+            nums.push(tach[i]);
+          }
+          i++;
+        }
+
+        let luythua = stp(nums); //gán giá trị
+        i = 0;
+
+        while (i < oper.length) {
+          const n1 = parseFloat(nums[i]);
+          const n2 = parseFloat(nums[i + 1]);
+          let finalresult;
+
+          if (oper[i] === "×" || oper[i] === "÷") {
+            if (oper[i] === "×") {
+              if (n1.toString().includes(".") || n2.toString().includes(".")) {
+                finalresult = (n1 * n2 * luythua) / luythua;
+              } else {
+                finalresult = n1 * n2;
+              }
+            } else if (oper[i] === "÷") {
+              if (n1.toString().includes(".") || n2.toString().includes(".")) {
+                finalresult = (n1 * luythua) / (n2 * luythua);
+              } else {
+                finalresult = n1 / n2;
+              }
+            }
+            nums.splice(i, 2, finalresult);
+            oper.splice(i, 1);
+          } else {
+            i++;
+          }
+        }
+
+        i = 0;
+        while (i < oper.length) {
+          const n1 = parseFloat(nums[i]);
+          const n2 = parseFloat(nums[i + 1]);
+          let finalresult;
+
+          if (oper[i] === "+" || oper[i] === "-") {
+            if (oper[i] === "+") {
+              finalresult = n1 + n2;
+            }
+            if (oper[i] === "-") {
+              finalresult = n1 - n2;
+            }
+            nums.splice(i, 2, finalresult);
+            oper.splice(i, 1);
+          }
+        }
+        return nums[0].toFixed(10).replace(/\.?0+$/, "");
+      }
+
+      function isOperator(char) {
+        return ["+", "-", "×", "÷"].includes(char);
+      }
+
+      function calculator() {
+        if (display.value === "") {
+          return;
+        }
+        let bieuthuc = display.value;
+        if (bieuthuc.startsWith("-")) {
+          bieuthuc = "0" + bieuthuc;
+        }
+        display.value = bieuthuc;
+        let finalresult = tinhtoan();
+        display.value = finalresult;
+        console.log(finalresult);
+        check = true;
         checkfont();
       }
     </script>
